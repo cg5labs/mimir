@@ -65,6 +65,10 @@ ingester:
     replication_factor: 1
 
 blocks_storage:
+  #storage_prefix: blocks
+  #tsdb:
+  #  dir: /data/ingester
+  
   backend: filesystem
   bucket_store:
     sync_dir: /tmp/mimir/tsdb-sync
