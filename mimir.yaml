@@ -1,0 +1,98 @@
+# Do not use this configuration in production.
+# It is for demonstration purposes only.
+# Run Mimir in single process mode, with all components running in 1 process.
+target: all,alertmanager,overrides-exporter
+
+# Configure Mimir to use Minio as object storage backend.
+common:
+  storage:
+    backend: filesystem
+    filesystem:
+      dir: /data/mimir
+
+    #backend: s3
+    #s3:
+    #  endpoint: minio:9000
+    #  access_key_id: mimir
+    #  secret_access_key: supersecret
+    #  insecure: true
+    #  bucket_name: mimir
+
+# Use memberlist, a gossip-based protocol, to enable the 3 Mimir replicas to communicate
+memberlist:
+  join_members: [mimir-0.mimir, mimir-1.mimir, mimir-2.mimir]
+
+
+alertmanager: 
+  data_dir: /data/alertmanager
+# Do not use this configuration in production.
+# It is for demonstration purposes only.
+multitenancy_enabled: false
+alertmanager_storage:
+  backend: local
+  local:
+    path: /alert
+
+
+activity_tracker: {}
+
+server:
+  http_listen_port: 9009
+  log_level: warn
+
+  # Configure the server to allow messages up to 100MB.
+  grpc_server_max_recv_msg_size: 104857600
+  grpc_server_max_send_msg_size: 104857600
+  grpc_server_max_concurrent_streams: 1000
+
+distributor:
+  pool:
+    health_check_ingesters: true
+
+ingester_client:
+  grpc_client_config:
+    grpc_compression: gzip
+    max_recv_msg_size: 104857600
+    max_send_msg_size: 104857600
+
+ingester:
+  ring:
+    final_sleep: 0s
+    kvstore:
+      store: inmemory
+    min_ready_duration: 0s
+    num_tokens: 512
+    replication_factor: 1
+
+blocks_storage:
+  backend: filesystem
+  bucket_store:
+    sync_dir: /tmp/mimir/tsdb-sync
+  filesystem:
+    dir: /tmp/mimir/blocks
+  tsdb:
+    dir: /tmp/mimir/tsdb
+
+compactor:
+  data_dir: /data/data-compactor
+  sharding_ring:
+    kvstore:
+      store: inmemory
+
+ruler:
+  rule_path: /data/data-ruler
+  alertmanager_url: http://127.0.0.1:8080/alertmanager
+  enable_api: true
+  ring:
+    # Quickly detect unhealthy rulers to speed up the tutorial.
+    heartbeat_period: 2s
+    heartbeat_timeout: 10s
+
+ruler_storage:
+  backend: filesystem
+  local:
+    directory: /tmp/mimir/rules
+
+limits:
+  ingestion_burst_size: 500000
+  ingestion_rate: 250000

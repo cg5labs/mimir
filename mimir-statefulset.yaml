@@ -1,0 +1,71 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mimir
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mimir
+  serviceName: mimir
+  template:
+    metadata:
+      labels:
+        app: mimir
+    spec:
+      serviceAccountName: s3-access
+      containers:
+        - name: mimir
+          args:
+            - "-config.expand-env=true"
+            - "-activity-tracker.filepath=/data/metrics-activity.log"
+            - "-config.file=/etc/mimir/mimir.yaml"
+          image: grafana/mimir:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9009
+              name: app
+              protocol: TCP
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: config-vol
+              mountPath: /etc/mimir
+            - name: data-vol
+              mountPath: /data
+            - name: am-vol
+              mountPath: /alert
+            - name: am-config-vol
+              mountPath: /etc/alertmanager
+            - name: tmp-vol
+              mountPath: /tmp/mimir
+              
+      volumes:
+        - name: am-vol
+          emptyDir: {}
+        - name: tmp-vol
+          emptyDir: {}
+        - name: am-config-vol
+          configMap:
+            name: alertmanager-cm
+            items:
+              - key: alertmanager-fallback-config.yaml
+                path: alertmanager-fallback-config.yaml
+
+        - name: data-vol
+          emptyDir: {}
+        - name: config-vol
+          configMap:
+            name: mimir-cm
+            items:
+              - key: mimir.yaml
+                path: mimir.yaml
+
+

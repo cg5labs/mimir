@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mimir
+  labels:
+    app: mimir
+spec:
+  clusterIP: None # <= Don't forget!!
+  selector:
+    app: mimir
+  ports:
+    - protocol: TCP
+      port: 9009
+      targetPort: 9009
